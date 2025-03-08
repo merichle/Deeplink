@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Link Tester</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: white;
+            font-family: Arial, sans-serif;
+        }
+        input {
+            width: 80%;
+            max-width: 400px;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: darkblue;
+        }
+    </style>
+</head>
+<body>
+
+    <input type="text" id="deepLinkInput" placeholder="Write deep link url ..." />
+    <button onclick="openDeepLink()">Deeplink</button>
+
+    <script>
+        function openDeepLink() {
+            const url = document.getElementById("deepLinkInput").value.trim();
+            if (url) {
+                window.location.href = url;
+            } else {
+                alert("Please enter a valid deep link URL!");
+            }
+        }
+    </script>
+
+</body>
+</html>
