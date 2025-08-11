@@ -1,58 +1,147 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Link Tester</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: white;
-            font-family: Arial, sans-serif;
-        }
-        input {
-            width: 80%;
-            max-width: 400px;
-            padding: 10px;
-            font-size: 16px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: blue;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: darkblue;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deep Link Tester</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #111;
+      --border: #cccccc;
+      --valid: #16a34a;
+      --invalid: #dc2626;
+      --disabled: #9ca3af;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    .card {
+      width: min(620px, 92vw);
+      padding: 28px;
+      border: 1px solid #eee;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.06);
+    }
+    h1 { font-size: 20px; margin: 0 0 12px 0; font-weight: 700; }
+    p  { margin: 0 0 18px 0; font-size: 14px; color: #555; }
+    .field { display: flex; gap: 12px; align-items: center; }
+    input[type="text"]{
+      flex: 1;
+      padding: 12px 14px;
+      font-size: 16px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      text-align: left;
+      direction: ltr;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    input[type="text"].is-valid   { border-color: var(--valid);   box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+    input[type="text"].is-invalid { border-color: var(--invalid); box-shadow: 0 0 0 3px rgba(220,38,38,.12); }
+    input[type="text"]::placeholder { color: #aaa; }
+    button {
+      padding: 12px 22px;
+      font-size: 16px;
+      border: none; border-radius: 10px;
+      cursor: pointer;
+      transition: background-color .2s ease, opacity .2s ease, transform .05s ease;
+      user-select: none;
+      white-space: nowrap;
+      color: #fff;
+    }
+    button:active { transform: translateY(1px); }
+    .btn-disabled { background: var(--disabled); cursor: not-allowed; opacity: 0.9; }
+    .btn-valid    { background: var(--valid); }
+    .btn-invalid  { background: var(--invalid); }
+    .hint { margin-top: 10px; font-size: 12px; color: #666; direction: ltr; text-align: left; }
+  </style>
 </head>
 <body>
-
-    <input type="text" id="deepLinkInput" placeholder="Write deep link url ..." />
-    <button onclick="openDeepLink()">Deeplink</button>
-
-    <script>
-        function openDeepLink() {
-            const url = document.getElementById("deepLinkInput").value.trim();
-            if (url) {
-                window.location.href = url;
-            } else {
-                alert("Please enter a valid deep link URL!");
-            }
-        }
-    </script>
-
+  <main class="card">
+    <h1>Deep Link Tester</h1>
+    <p>
+      Enter a deep link or URL, or provide it via query parameters <code>?url=</code>, <code>?u=</code> or <code>?q=</code> when loading this page.
+    </p>
+    <div class="field">
+      <input
+        type="text"
+        id="deepLinkInput"
+        placeholder="Example: myapp://open?tab=home or https://example.com"
+        autocomplete="off"
+        inputmode="url"
+        spellcheck="false"
+      />
+      <button id="goBtn" class="btn-disabled" disabled>Go</button>
+    </div>
+    <div class="hint" id="hint"></div>
+  </main>
+  <script>
+    const $input = document.getElementById('deepLinkInput');
+    const $btn   = document.getElementById('goBtn');
+    const $hint  = document.getElementById('hint');
+    const SCHEME_REGEX = /^[a-z][a-z0-9+.-]*:/i;
+    function isProbablyURL(value) {
+      if (!value || /\s/.test(value)) return false;
+      return SCHEME_REGEX.test(value);
+    }
+    function setState() {
+      const v = $input.value.trim();
+      if (v.length === 0) {
+        $btn.disabled = true;
+        $btn.className = 'btn-disabled';
+        $btn.textContent = 'Go';
+        $input.classList.remove('is-valid', 'is-invalid');
+        $hint.textContent = '';
+        return;
+      }
+      if (isProbablyURL(v)) {
+        $btn.disabled = false;
+        $btn.className = 'btn-valid';
+        $btn.textContent = 'Go';
+        $input.classList.add('is-valid');
+        $input.classList.remove('is-invalid');
+        $hint.textContent = '';
+      } else {
+        $btn.disabled = false;
+        $btn.className = 'btn-invalid';
+        $btn.textContent = 'Invalid URL!';
+        $input.classList.add('is-invalid');
+        $input.classList.remove('is-valid');
+        $hint.textContent = 'URL scheme must be valid (e.g., myapp:// or https://).';
+      }
+    }
+    function openDeepLink() {
+      const url = $input.value.trim();
+      if (!isProbablyURL(url)) {
+        $btn.style.transform = 'translateY(0)';
+        requestAnimationFrame(() => {
+          $btn.style.transform = 'translateY(1px)';
+          setTimeout(() => ($btn.style.transform = 'translateY(0)'), 60);
+        });
+        return;
+      }
+      window.location.href = url;
+    }
+    (function prefillFromQuery() {
+      const sp = new URLSearchParams(window.location.search);
+      const first = sp.get('url') ?? sp.get('u') ?? sp.get('q');
+      if (first) $input.value = first;
+      setState();
+    })();
+    $input.addEventListener('input', setState);
+    $btn.addEventListener('click', openDeepLink);
+    $input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        $btn.click();
+      }
+    });
+  </script>
 </body>
 </html>
