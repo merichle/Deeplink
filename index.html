@@ -30,9 +30,9 @@
     }
     h1 { font-size: 20px; margin: 0 0 12px 0; font-weight: 700; }
     p  { margin: 0 0 18px 0; font-size: 14px; color: #555; }
-    .field { display: flex; gap: 12px; align-items: center; }
+    .field { display: flex; flex-direction: column; gap: 12px; }
     input[type="text"]{
-      flex: 1;
+      width: 100%;
       padding: 12px 14px;
       font-size: 16px;
       border: 2px solid var(--border);
@@ -54,13 +54,13 @@
       user-select: none;
       white-space: nowrap;
       color: #fff;
+      width: 100%;
     }
     button:active { transform: translateY(1px); }
     .btn-disabled { background: var(--disabled); cursor: not-allowed; opacity: 0.9; }
     .btn-valid    { background: var(--valid); }
     .btn-invalid  { background: var(--invalid); }
     .hint { margin-top: 10px; font-size: 12px; color: #666; direction: ltr; text-align: left; }
-    .row { display: flex; gap: 12px; margin-top: 12px; }
   </style>
 </head>
 <body>
@@ -82,48 +82,30 @@
       />
       <button id="goBtn" class="btn-disabled" disabled>Go</button>
     </div>
-
-    <!-- Optional: share helpers (create safe preload links) -->
-    <div class="row">
-      <button id="shareB64" class="btn-valid" type="button">Copy link (?url_b64)</button>
-    </div>
-
     <div class="hint" id="hint"></div>
   </main>
 
   <script>
-    // -------------------- Utilities --------------------
-
-    // Robust scheme detector (e.g., myapp:, https:, hamrahcarddebug:)
+    // --- Helpers ---
     const SCHEME_REGEX = /^[a-z][a-z0-9+.-]*:/i;
-
-    /**
-     * Validate "looks like a URL/deep link".
-     * We only check scheme presence to avoid over-restricting custom schemes.
-     */
     function isProbablyURL(value) {
       if (!value || /\s/.test(value)) return false;
       return SCHEME_REGEX.test(value);
     }
-
-    /** Non-throwing decodeURIComponent; keeps input on failure. */
     function safeDecode(s) {
       try { return decodeURIComponent(s.replace(/\+/g, '%20')); } catch { return s; }
     }
-
-    /** Read a query param (raw). */
     function getParam(name) {
       const sp = new URLSearchParams(window.location.search);
       return sp.get(name);
     }
 
-    // -------------------- DOM refs --------------------
+    // --- DOM refs ---
     const $input = document.getElementById('deepLinkInput');
     const $btn   = document.getElementById('goBtn');
     const $hint  = document.getElementById('hint');
-    const $shareB64 = document.getElementById('shareB64');
 
-    // -------------------- UI state --------------------
+    // --- State ---
     function setState() {
       const v = $input.value.trim();
       if (v.length === 0) {
@@ -151,81 +133,33 @@
       }
     }
 
-    // -------------------- Actions --------------------
     function openDeepLink() {
       const url = $input.value.trim();
-      if (!isProbablyURL(url)) {
-        // Small nudge animation to indicate invalid action
-        $btn.style.transform = 'translateY(0)';
-        requestAnimationFrame(() => {
-          $btn.style.transform = 'translateY(1px)';
-          setTimeout(() => ($btn.style.transform = 'translateY(0)'), 60);
-        });
-        return;
-      }
-      // Navigate to the deep link
+      if (!isProbablyURL(url)) return;
       window.location.href = url;
     }
 
-    // Copy helper with hint feedback
-    function copyText(text) {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text)
-          .then(() => { $hint.textContent = 'Link copied to clipboard.'; })
-          .catch(() => { $hint.textContent = 'Could not copy link.'; });
-      } else {
-        // Fallback
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-          document.execCommand('copy');
-          $hint.textContent = 'Link copied to clipboard.';
-        } catch {
-          $hint.textContent = 'Could not copy link.';
-        } finally {
-          document.body.removeChild(ta);
-        }
-      }
-    }
-
-    // Create a shareable link using ?url_b64=
-    function makeB64ShareLink(raw) {
-      const base = window.location.origin + window.location.pathname;
-      const b64 = btoa(raw); // Base64 encode raw deep link string
-      return `${base}?url_b64=${b64}`;
-    }
-
-    // -------------------- Prefill logic --------------------
+    // --- Prefill ---
     (function prefillFromQuery() {
-      // 1) Preferred: Base64 preload (?url_b64=BASE64_OF_DEEP_LINK)
       const b64 = getParam('url_b64');
       if (b64) {
         try {
-          const raw = atob(b64);           // Decode Base64 into original deep link
+          const raw = atob(b64);
           $input.value = raw;
           setState();
           return;
         } catch {
-          // If base64 is malformed, fall through to other options
           $hint.textContent = 'Warning: Invalid base64 in url_b64.';
         }
       }
-
-      // 2) Classic query params (?url= / ?u= / ?q=) — must be percent-encoded
       const encoded = getParam('url') ?? getParam('u') ?? getParam('q');
       if (encoded) {
         $input.value = safeDecode(encoded);
-        setState();
-        return;
       }
-
-      // 3) Nothing provided: do nothing
       setState();
     })();
 
-    // -------------------- Events --------------------
+    // --- Events ---
     $input.addEventListener('input', setState);
     $btn.addEventListener('click', openDeepLink);
     $input.addEventListener('keydown', (e) => {
@@ -233,17 +167,6 @@
         e.preventDefault();
         $btn.click();
       }
-    });
-
-    // Optional: generate a shareable ?url_b64 link for the current input
-    $shareB64.addEventListener('click', () => {
-      const raw = $input.value.trim();
-      if (!raw) {
-        $hint.textContent = 'Nothing to share. Enter a deep link first.';
-        return;
-      }
-      const link = makeB64ShareLink(raw);
-      copyText(link);
     });
   </script>
 </body>
